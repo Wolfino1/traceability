@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class TraceabilityEntity {
     @Id
     private String id;
+    private Long restaurantId;
     private Long orderId;
     private Long clientId;
     private String clientEmail;

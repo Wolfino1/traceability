@@ -3,6 +3,7 @@ package com.plazoleta.trazabilidad.common.beans;
 import com.plazoleta.trazabilidad.application.mappers.TraceabilityMapper;
 import com.plazoleta.trazabilidad.domain.ports.in.TraceabilityServicePort;
 import com.plazoleta.trazabilidad.domain.ports.out.OrderClientPort;
+import com.plazoleta.trazabilidad.domain.ports.out.RestaurantClientPort;
 import com.plazoleta.trazabilidad.domain.ports.out.TraceabilityPersistencePort;
 import com.plazoleta.trazabilidad.domain.ports.out.UserClientPort;
 import com.plazoleta.trazabilidad.domain.usecase.TraceabilityUseCase;
@@ -31,16 +32,21 @@ public class BeanConfiguration {
     private final OrderClientPort orderClientPort;
     private final UserClientPort userClientPort;
     private final TraceabilityMapper mapper;
+    private final JwtUtil jwtUtil;
+    private final RestaurantClientPort restaurantClient;
+    private final OrderClientPort orderClient;
+
+
 
 
     @Bean
     public TraceabilityServicePort traceabilityServicePort() {
-        return new TraceabilityUseCase(traceabilityPersistencePort(),orderClientPort,userClientPort);
+        return new TraceabilityUseCase(traceabilityPersistencePort(),restaurantClient,userClientPort,jwtUtil);
     }
 
     @Bean
     public TraceabilityPersistencePort traceabilityPersistencePort() {
-        return new TraceabilityPersistenceAdapter(traceabilityRepository,mapper);
+        return new TraceabilityPersistenceAdapter(traceabilityRepository, orderClient, mapper);
     }
 
     @Bean
@@ -70,6 +76,7 @@ public class BeanConfiguration {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.GET, "/api/v1/trazabilidad/order/{id}").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET, "/api/v1/trazabilidad/{orderId}/efficiency").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/trazabilidad/employees/efficiency").hasRole("OWNER")
 
                         .anyRequest().authenticated()
                 )

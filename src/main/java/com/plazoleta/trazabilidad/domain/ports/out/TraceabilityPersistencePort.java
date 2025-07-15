@@ -23,4 +23,6 @@ public interface TraceabilityPersistencePort {
             OrderStatus newState
     );
     List<TraceabilityModel> findByOrderId(Long orderId);
+    List<TraceabilityModel> findByRestaurantId(String authHeader, Long restaurantId);
+
 }

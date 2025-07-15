@@ -1,12 +1,16 @@
 package com.plazoleta.trazabilidad.infrastructure.adapters.persistence;
 
 import com.plazoleta.trazabilidad.application.mappers.TraceabilityMapper;
+import com.plazoleta.trazabilidad.domain.exceptions.InvalidOrderException;
 import com.plazoleta.trazabilidad.domain.models.OrderStatus;
 import com.plazoleta.trazabilidad.domain.models.TraceabilityModel;
+import com.plazoleta.trazabilidad.domain.ports.out.OrderClientPort;
 import com.plazoleta.trazabilidad.domain.ports.out.TraceabilityPersistencePort;
 import com.plazoleta.trazabilidad.domain.util.page.PagedResult;
 import com.plazoleta.trazabilidad.infrastructure.entity.TraceabilityEntity;
 import com.plazoleta.trazabilidad.infrastructure.repositories.mongodb.TraceabilityRepository;
+import com.plazoleta.trazabilidad.infrastructure.web.dto.OrderClientDto;
+import com.plazoleta.trazabilidad.infrastructure.web.dto.OrderSummaryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 public class TraceabilityPersistenceAdapter implements TraceabilityPersistencePort {
 
     private final TraceabilityRepository repository;
+    private final OrderClientPort orderClient;
     private final TraceabilityMapper mapper;
 
     @Override
@@ -75,4 +80,26 @@ public class TraceabilityPersistenceAdapter implements TraceabilityPersistencePo
                 .map(mapper::entityToModel)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<TraceabilityModel> findByRestaurantId(String authHeader, Long restaurantId) {
+        List<OrderSummaryDto> orders = orderClient.getOrdersByRestaurant(authHeader, restaurantId);
+        if (orders.isEmpty()) {
+            throw new InvalidOrderException("No hay trazabilidad para el restaurante " + restaurantId);
+        }
+
+        List<Long> orderIds = orders.stream()
+                .map(OrderSummaryDto::orderId)
+                .toList();
+
+        List<TraceabilityEntity> entities = repository.findByOrderIdIn(orderIds);
+        if (entities.isEmpty()) {
+            throw new InvalidOrderException("No hay trazabilidad para el restaurante " + restaurantId);
+        }
+
+        return entities.stream()
+                .map(mapper::entityToModel)
+                .toList();
+    }
+
 }

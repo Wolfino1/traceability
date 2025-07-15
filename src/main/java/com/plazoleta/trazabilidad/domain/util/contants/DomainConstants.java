@@ -11,5 +11,5 @@ public class DomainConstants {
             "check other client's orders";
     public static final String TRACEABILITY_INCOMPLETED = "There are events missing to complete traceability";
     public static final String ORDER_CANT_BE_NULL = "Order ID can't be null";
-
+    public static final String NOT_ALLOWED = "You are not allowed to check this restaurant";
 }

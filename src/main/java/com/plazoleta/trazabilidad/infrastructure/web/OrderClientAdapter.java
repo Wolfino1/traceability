@@ -1,15 +1,22 @@
 package com.plazoleta.trazabilidad.infrastructure.web;
 
 import com.plazoleta.trazabilidad.domain.ports.out.OrderClientPort;
+import com.plazoleta.trazabilidad.domain.util.page.PagedResult;
 import com.plazoleta.trazabilidad.infrastructure.web.dto.OrderClientDto;
+import com.plazoleta.trazabilidad.infrastructure.web.dto.OrderSummaryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @Service
 @RequiredArgsConstructor
@@ -24,20 +31,50 @@ public class OrderClientAdapter implements OrderClientPort {
                                        String authorizationHeader) {
         List<OrderClientDto> orders = orderWebClient.get()
                 .uri("/order/{id}", orderId)
-                .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
+                .header(AUTHORIZATION, authorizationHeader)
                 .retrieve()
                 .bodyToFlux(OrderClientDto.class)
                 .collectList()
                 .block();
 
         return orders.stream()
-                .filter(o -> o.id().equals(orderId))
+                .filter(o -> o.orderId().equals(orderId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException(
                         "No se encontró la orden " + orderId +
                                 " para el restaurante " + restaurantId
                 ));
     }
+
+    @Override
+    public List<OrderSummaryDto> getOrdersByRestaurant(String authorizationHeader,
+                                                       Long restaurantId) {
+        // 1) Llamada al endpoint con page y size
+        PagedResult<OrderClientDto> paged = orderWebClient.get()
+                .uri(uri -> uri
+                        .path("/order/restaurants/{restaurantId}/orders")
+                        .queryParam("page", 0)
+                        .queryParam("size", 1000)
+                        .build(restaurantId))
+                .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
+                .retrieve()
+                // Aquí decodificas al tipo genérico PagedResult<OrderClientDto>
+                .bodyToMono(new ParameterizedTypeReference<PagedResult<OrderClientDto>>() {})
+                .block();
+
+        if (paged == null || paged.getContent().isEmpty()) {
+            // Si tu PagedResult usa otro nombre para la lista interna,
+            // reemplaza getItems() por el getter correcto.
+            throw new RuntimeException(
+                    "No se encontraron órdenes para el restaurante " + restaurantId);
+        }
+
+        // 2) Mapea cada OrderClientDto a tu OrderSummaryDto
+        return paged.getContent().stream()
+                .map(o -> new OrderSummaryDto(o.orderId()))
+                .collect(Collectors.toList());
+    }
+
 }
 
 

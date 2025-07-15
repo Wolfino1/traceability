@@ -1,7 +1,8 @@
 package com.plazoleta.trazabilidad.application.dto.response;
 
+import java.time.Duration;
+
 public record EmployeeEfficiencyResponse(
         Long employeeId,
-        String employeeEmail,
-        double averageTime
+        Duration averageTime
 ) {}

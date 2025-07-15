@@ -30,4 +30,14 @@ public class WebConfiguration {
                 .baseUrl(baseUrl)
                 .build();
     }
+
+    @Bean
+    @Qualifier("restaurantWebClient")
+    public WebClient restaurantWebClient(
+            @Value("${services.restaurant.base-url}") String baseUrl
+    ) {
+        return WebClient.builder()
+                .baseUrl(baseUrl)
+                .build();
+    }
 }

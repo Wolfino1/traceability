@@ -1,16 +1,19 @@
 package com.plazoleta.trazabilidad.application.service.impl;
 
 import com.plazoleta.trazabilidad.application.dto.request.CreateTraceabilityRequest;
+import com.plazoleta.trazabilidad.application.dto.response.EmployeeEfficiencyResponse;
 import com.plazoleta.trazabilidad.application.dto.response.OrderEfficiencyResponse;
 import com.plazoleta.trazabilidad.application.dto.response.TraceabilityClientResponse;
 import com.plazoleta.trazabilidad.application.dto.response.TraceabilityResponse;
 import com.plazoleta.trazabilidad.application.mappers.TraceabilityMapper;
 import com.plazoleta.trazabilidad.application.service.TraceabilityService;
+import com.plazoleta.trazabilidad.domain.models.EmployeeEfficiencyModel;
 import com.plazoleta.trazabilidad.domain.models.OrderEfficiencyModel;
 import com.plazoleta.trazabilidad.domain.models.OrderStatus;
 import com.plazoleta.trazabilidad.domain.models.TraceabilityModel;
 import com.plazoleta.trazabilidad.domain.ports.in.TraceabilityServicePort;
 import com.plazoleta.trazabilidad.domain.util.page.PagedResult;
+import com.plazoleta.trazabilidad.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +27,7 @@ public class TraceabilityServiceImpl implements TraceabilityService {
 
     private final TraceabilityMapper mapper;
     private final TraceabilityServicePort service;
-
+    private final JwtUtil jwtUtil;
 
     @Override
         public TraceabilityResponse create(
@@ -77,5 +80,16 @@ public class TraceabilityServiceImpl implements TraceabilityService {
                 eff.getEmployeeId(),
                 eff.getTimeTaken()
         );
+    }
+
+    @Override
+    public List<EmployeeEfficiencyResponse> getEmployeesEfficiency(String authHeader, Long restaurantId) {
+        List<EmployeeEfficiencyModel> models = service.getEmployeesEfficiency(authHeader, restaurantId);
+        return models.stream()
+                .map(m -> new EmployeeEfficiencyResponse(
+                        m.getEmployeeId(),
+                        m.getAverageTime()
+                ))
+                .collect(Collectors.toList());
     }
 }

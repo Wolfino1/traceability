@@ -1,5 +1,6 @@
 package com.plazoleta.trazabilidad.infrastructure.endpoints.rest;
 
+import com.plazoleta.trazabilidad.application.dto.response.EmployeeEfficiencyResponse;
 import com.plazoleta.trazabilidad.application.dto.response.OrderEfficiencyResponse;
 import com.plazoleta.trazabilidad.application.dto.response.TraceabilityClientResponse;
 import com.plazoleta.trazabilidad.application.service.TraceabilityService;
@@ -7,6 +8,7 @@ import com.plazoleta.trazabilidad.application.dto.request.CreateTraceabilityRequ
 import com.plazoleta.trazabilidad.application.dto.response.TraceabilityResponse;
 import com.plazoleta.trazabilidad.domain.models.OrderStatus;
 import com.plazoleta.trazabilidad.domain.util.page.PagedResult;
+import com.plazoleta.trazabilidad.infrastructure.security.JwtUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/trazabilidad")
@@ -23,6 +26,7 @@ import java.time.LocalDateTime;
 public class TraceabilityController {
 
     private final TraceabilityService traceabilityService;
+    private final JwtUtil jwtUtil;
 
     @PostMapping
     public ResponseEntity<TraceabilityResponse> createTrace(
@@ -53,6 +57,16 @@ public class TraceabilityController {
     @GetMapping("/{orderId}/efficiency")
     public ResponseEntity<OrderEfficiencyResponse> getEfficiencyByOrder(@PathVariable Long orderId) {
         OrderEfficiencyResponse resp = traceabilityService.getEfficiencyByOrder(orderId);
+        return ResponseEntity.ok(resp);
+    }
+
+    @PreAuthorize("hasRole('OWNER')")
+    @GetMapping("/employees/efficiency")
+    public ResponseEntity<List<EmployeeEfficiencyResponse>> getEmployeesEfficiency(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader,
+            @RequestParam Long restaurantId) {
+        List<EmployeeEfficiencyResponse> resp =
+                traceabilityService.getEmployeesEfficiency(authHeader, restaurantId);
         return ResponseEntity.ok(resp);
     }
 }
