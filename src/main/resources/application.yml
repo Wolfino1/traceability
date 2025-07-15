@@ -1,0 +1,14 @@
+server:
+  port: 8084
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/trazabilidadDB
+services:
+  order:
+    base-url: http://localhost:8081/api/v1
+  user:
+    base-url: http://localhost:8080/api/v1
+jwt:
+  secret: pPj7W5c8LsyP9+ldOwqQF/qEyzTV6WUJFSUgfsVOkXs=
+  expiration: 3600000
