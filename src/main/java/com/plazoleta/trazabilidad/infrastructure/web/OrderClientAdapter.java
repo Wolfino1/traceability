@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,7 +48,6 @@ public class OrderClientAdapter implements OrderClientPort {
     @Override
     public List<OrderSummaryDto> getOrdersByRestaurant(String authorizationHeader,
                                                        Long restaurantId) {
-        // 1) Llamada al endpoint con page y size
         PagedResult<OrderClientDto> paged = orderWebClient.get()
                 .uri(uri -> uri
                         .path("/order/restaurants/{restaurantId}/orders")
@@ -58,23 +56,17 @@ public class OrderClientAdapter implements OrderClientPort {
                         .build(restaurantId))
                 .header(HttpHeaders.AUTHORIZATION, authorizationHeader)
                 .retrieve()
-                // Aquí decodificas al tipo genérico PagedResult<OrderClientDto>
                 .bodyToMono(new ParameterizedTypeReference<PagedResult<OrderClientDto>>() {})
                 .block();
 
         if (paged == null || paged.getContent().isEmpty()) {
-            // Si tu PagedResult usa otro nombre para la lista interna,
-            // reemplaza getItems() por el getter correcto.
+
             throw new RuntimeException(
                     "No se encontraron órdenes para el restaurante " + restaurantId);
         }
 
-        // 2) Mapea cada OrderClientDto a tu OrderSummaryDto
         return paged.getContent().stream()
                 .map(o -> new OrderSummaryDto(o.orderId()))
                 .collect(Collectors.toList());
     }
-
 }
-
-

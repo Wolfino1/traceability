@@ -10,7 +10,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserClientAdapter implements UserClientPort {
@@ -20,7 +19,6 @@ public class UserClientAdapter implements UserClientPort {
 
     @Override
     public UserClientDto getUserById(Long userId, String authorizationHeader) {
-        log.info("Consultando userId='{}' al endpoint user", userId);
         if (userId == null) {
             throw new WrongArgumentException("No se puede consultar usuario con id null");
         }

@@ -129,26 +129,24 @@ public class TraceabilityUseCase implements TraceabilityServicePort {
 
         List<TraceabilityModel> logs = persistencePort.findByRestaurantId(authHeader, restaurantId);
         if (logs.isEmpty()) {
-            throw new WrongArgumentException("No hay trazabilidad para el restaurante " + restaurantId);
+            throw new WrongArgumentException("There is no traceability for this restaurant " + restaurantId);
         }
 
-        // 1) Agrupa TODOS los logs por empleado
         Map<Long, List<TraceabilityModel>> logsPorEmpleado = logs.stream()
-                .collect(Collectors.groupingBy(TraceabilityModel::getEmployeeId));
+                .collect(Collectors.groupingBy(
+                        l -> l.getEmployeeId() == null ? 0L : l.getEmployeeId()
+                ));
 
         return logsPorEmpleado.entrySet().stream()
-                // 2) Sólo empleados que tengan al menos una entrega
                 .filter(e -> e.getValue().stream()
                         .anyMatch(l -> l.getNewState() == OrderStatus.ENTREGADO))
                 .map(e -> {
                     Long empId = e.getKey();
                     List<TraceabilityModel> trazasEmp = e.getValue();
 
-                    // 3) Agrupa las trazas de este empleado por cada orderId
                     Map<Long, List<TraceabilityModel>> trazasPorOrden = trazasEmp.stream()
                             .collect(Collectors.groupingBy(TraceabilityModel::getOrderId));
 
-                    // 4) Calcula el promedio sólo sobre órdenes que sí llegaron a ENTREGADO
                     double avgMillis = trazasPorOrden.entrySet().stream()
                             .filter(o -> o.getValue().stream()
                                     .anyMatch(l -> l.getNewState() == OrderStatus.ENTREGADO))
@@ -156,7 +154,6 @@ public class TraceabilityUseCase implements TraceabilityServicePort {
                                 Long orderId = o.getKey();
                                 List<TraceabilityModel> t = o.getValue();
 
-                                // marca de salida de preparación
                                 LocalDateTime start = t.stream()
                                         .filter(l -> l.getPreviousState() == OrderStatus.EN_PREPARACION)
                                         .findFirst()
@@ -164,7 +161,6 @@ public class TraceabilityUseCase implements TraceabilityServicePort {
                                                 "Falta estado EN_PREPARACION para orderId = " + orderId))
                                         .getDate();
 
-                                // marca de entrega
                                 LocalDateTime end = t.stream()
                                         .filter(l -> l.getNewState() == OrderStatus.ENTREGADO)
                                         .findFirst()
@@ -182,20 +178,9 @@ public class TraceabilityUseCase implements TraceabilityServicePort {
                             Duration.ofMillis((long) avgMillis)
                     );
                 })
-                // 5) Orden descendente por tiempo promedio
                 .sorted(Comparator.comparing(EmployeeEfficiencyModel::getAverageTime).reversed())
                 .toList();
     }
-
-
-
-
-
-
-
-
-
-
 
     private boolean orderBelongsToClient(Long orderId, Long clientId) {
         return true;
